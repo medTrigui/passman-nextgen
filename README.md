@@ -11,7 +11,7 @@
 2. [Architecture](#architecture)
 3. [Project Structure](#project-structure)
 4. [Prerequisites](#prerequisites)
-5. [Getting Started (🐳 Docker)](#getting-started-🐳-docker)
+5. [Getting Started (🐳 Docker)](#getting-started-docker)
 6. [Environment Variables](#environment-variables)
 7. [Database Migrations](#database-migrations)
 8. [Running Tests](#running-tests)
@@ -30,7 +30,7 @@
 | **Store / view / update / delete site passwords** | AES-256-GCM encryption, per-row IV |
 | **Password generator** | Custom length & character set |
 | **Containerised stack** | `docker compose up` spins up Postgres, API, UI, pgAdmin |
-| **OpenAPI docs** | `localhost:8000/docs` auto-generated |
+| **OpenAPI docs** | `http://localhost:8000/docs` auto-generated |
 | **Rate-limiting & audit logs** | Planned in v0.2 |
 | **2-Factor Authentication** | Planned in v0.3 |
 
@@ -41,18 +41,22 @@
 ```mermaid
 graph TD
   subgraph Browser
-    A[React SPA<br/>http://localhost:5173]
+    A["React SPA<br/>localhost:5173"]
   end
-  subgraph Container_2[Nginx (frontend)]
-    FE[Nginx serves static build]
-  end
+
   subgraph Container_1[FastAPI (backend)]
     API[/FastAPI + Uvicorn/]
     Worker[Async SQLAlchemy]
   end
+
+  subgraph Container_2[Nginx (frontend)]
+    FE["Serves static<br/>React build"]
+  end
+
   subgraph Container_3[PostgreSQL]
     DB[(passman)]
   end
+
   subgraph Container_4[pgAdmin]
     AdminUI[pgAdmin4]
   end
@@ -61,6 +65,7 @@ graph TD
   FE -- proxy --> API
   API -- asyncpg --> DB
   AdminUI -- 5432/TCP --> DB
+
 
 
 ## Project Structure
