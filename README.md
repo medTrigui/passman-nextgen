@@ -43,23 +43,25 @@ graph TD
   subgraph Browser
     A[React SPA<br/>http://localhost:5173]
   end
-  subgraph Container-2[Nginx (frontend)]
+  subgraph Container_2[Nginx (frontend)]
     FE[Nginx serves static build]
   end
-  subgraph Container-1[FastAPI (backend)]
+  subgraph Container_1[FastAPI (backend)]
     API[/FastAPI + Uvicorn/]
     Worker[Async SQLAlchemy]
   end
-  subgraph Container-3[PostgreSQL]
+  subgraph Container_3[PostgreSQL]
     DB[(passman)]
   end
-  subgraph Container-4[pgAdmin]
+  subgraph Container_4[pgAdmin]
     AdminUI[pgAdmin4]
   end
 
-  A--REST / JWT-->FE--proxy-->API
-  API--asyncpg-->DB
-  AdminUI--5432/TCP-->DB
+  A -- REST / JWT --> FE
+  FE -- proxy --> API
+  API -- asyncpg --> DB
+  AdminUI -- 5432/TCP --> DB
+
 
 ## Project Structure
 passman-nextgen/
