@@ -38,33 +38,8 @@
 
 ## Architecture
 
-```mermaid
-graph TD
-  subgraph Browser
-    A["React SPA - localhost:5173"]
-  end
+![image](https://github.com/user-attachments/assets/efc3fa47-54ac-4298-b5dd-a04e347c16d6)
 
-  subgraph Container_1[FastAPI - backend]
-    API["FastAPI + Uvicorn"]
-    Worker["Async SQLAlchemy"]
-  end
-
-  subgraph Container_2[Nginx - frontend]
-    FE["Serves static - React build"]
-  end
-
-  subgraph Container_3[PostgreSQL]
-    DB["passman"]
-  end
-
-  subgraph Container_4[pgAdmin]
-    AdminUI["pgAdmin4"]
-  end
-
-  A -- REST / JWT --> FE
-  FE -- proxy --> API
-  API -- asyncpg --> DB
-  AdminUI -- 5432/TCP --> DB
 
 
 
