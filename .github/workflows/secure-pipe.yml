@@ -25,7 +25,7 @@ jobs:
           pip install poetry
           cd backend && poetry install --no-interaction --no-root
 
-      - name: Run backend unit tests
+      - name: Run backend unit tests (skip if none)
         run: cd backend && poetry run pytest -q
 
       # ---------- frontend ----------
@@ -36,7 +36,7 @@ jobs:
       - name: Install frontend deps
         run: cd frontend && npm ci
 
-      - name: Run frontend unit tests
+      - name: Run frontend unit tests (skip if none)
         run: cd frontend && npm test -- --watchAll=false
 
   sast:
