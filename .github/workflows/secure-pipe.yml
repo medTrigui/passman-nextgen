@@ -1,0 +1,61 @@
+name: SecurePipe – SAST
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+env:
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- backend ----------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Install backend deps
+        run: |
+          pip install poetry
+          cd backend && poetry install --no-interaction --no-root
+
+      - name: Run backend unit tests (skip if none)
+        run: cd backend && poetry run pytest -q
+
+      # ---------- frontend ----------
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+
+      - name: Run frontend unit tests (skip if none)
+        run: cd frontend && npm test -- --watchAll=false
+
+  sast:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          host-url: ${{ env.SONAR_HOST_URL }}
+          project-base-dir: .
+          token: ${{ env.SONAR_TOKEN }}
+
+  quality-gate:
+    needs: sast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: SonarSource/sonarqube-quality-gate-action@v2
+        with:
+          host-url: ${{ env.SONAR_HOST_URL }}
+          token: ${{ env.SONAR_TOKEN }}
+
