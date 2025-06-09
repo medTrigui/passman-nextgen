@@ -41,24 +41,24 @@
 ```mermaid
 graph TD
   subgraph Browser
-    A["React SPA<br/>localhost:5173"]
+    A["React SPA - localhost:5173"]
   end
 
-  subgraph Container_1[FastAPI (backend)]
-    API[/FastAPI + Uvicorn/]
-    Worker[Async SQLAlchemy]
+  subgraph Container_1[FastAPI - backend]
+    API["FastAPI + Uvicorn"]
+    Worker["Async SQLAlchemy"]
   end
 
-  subgraph Container_2[Nginx (frontend)]
-    FE["Serves static<br/>React build"]
+  subgraph Container_2[Nginx - frontend]
+    FE["Serves static - React build"]
   end
 
   subgraph Container_3[PostgreSQL]
-    DB[(passman)]
+    DB["passman"]
   end
 
   subgraph Container_4[pgAdmin]
-    AdminUI[pgAdmin4]
+    AdminUI["pgAdmin4"]
   end
 
   A -- REST / JWT --> FE
