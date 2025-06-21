@@ -2,7 +2,7 @@
 
 A modern, secure password manager frontend built with React, TypeScript, and Material-UI.
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 - **Framework**: React with TypeScript
 - **Build Tool**: Vite
@@ -13,7 +13,7 @@ A modern, secure password manager frontend built with React, TypeScript, and Mat
 - **Routing**: React Router
 - **Development Mode**: Mock API support
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 frontend/
@@ -26,7 +26,7 @@ frontend/
 │   └── theme.ts         # MUI theme configuration
 ```
 
-## 🔑 Key Features
+##  Key Features
 
 - **Authentication**: Login/Register with JWT token management
 - **Password Management**: CRUD operations for password entries
@@ -52,13 +52,13 @@ frontend/
    npm run build
    ```
 
-## 🔄 Development Mode
+##  Development Mode
 
 The app includes a mock API for development. Use these credentials:
 - Username: testuser
 - Password: password
 
-## 📝 TODO List
+##  TODO List
 
 1. **Features to Implement**:
    - [ ] Add Password Creation/Edit Modal
@@ -96,14 +96,14 @@ The app includes a mock API for development. Use these credentials:
    - [ ] Add API Documentation
    - [ ] Create User Guide
 
-## 🔒 Security Considerations
+##  Security Considerations
 
 - JWT tokens are stored in localStorage (consider more secure alternatives)
 - Passwords are currently displayed in plain text when revealed
 - No encryption implemented yet for stored passwords
 - Mock data should never be used in production
 
-## 📦 Dependencies
+##  Dependencies
 
 Core dependencies are managed through `package.json`. Key packages:
 - React 18+
