@@ -2,3 +2,13 @@ venv/
 .env
 __pycache__/
 node_modules/
+dist/
+.vite_cache/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.db
+.pytest_cache/
+.coverage
+htmlcov/
