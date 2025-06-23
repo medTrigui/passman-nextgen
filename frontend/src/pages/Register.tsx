@@ -9,8 +9,6 @@ import {
   Alert,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function Register() {
@@ -19,17 +17,9 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
-
-  const registerMutation = useMutation({
-    mutationFn: () => authApi.register(username, email, password),
-    onSuccess: (data) => {
-      setToken(data.token);
-      setUser(data.user);
-      navigate('/');
-    },
-  });
+  const { register, isLoading } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +30,12 @@ export default function Register() {
     }
     
     setPasswordError('');
-    registerMutation.mutate();
+    try {
+      await register(username, email, password);
+      navigate('/');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An error occurred');
+    }
   };
 
   return (
@@ -60,9 +55,9 @@ export default function Register() {
           Create Account
         </Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          {registerMutation.isError && (
+          {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              Registration failed. Please try again.
+              {error}
             </Alert>
           )}
           <TextField
@@ -76,7 +71,7 @@ export default function Register() {
             autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            error={registerMutation.isError}
+            error={!!error}
           />
           <TextField
             margin="normal"
@@ -88,7 +83,7 @@ export default function Register() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={registerMutation.isError}
+            error={!!error}
           />
           <TextField
             margin="normal"
@@ -101,7 +96,7 @@ export default function Register() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={registerMutation.isError || !!passwordError}
+            error={!!error || !!passwordError}
           />
           <TextField
             margin="normal"
@@ -114,7 +109,7 @@ export default function Register() {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            error={registerMutation.isError || !!passwordError}
+            error={!!error || !!passwordError}
             helperText={passwordError}
           />
           <Button
@@ -122,9 +117,9 @@ export default function Register() {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={registerMutation.isPending}
+            disabled={isLoading}
           >
-            {registerMutation.isPending ? 'Creating Account...' : 'Create Account'}
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </Button>
           <Box sx={{ textAlign: 'center' }}>
             <Link component={RouterLink} to="/login" variant="body2">

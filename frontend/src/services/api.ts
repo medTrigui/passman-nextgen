@@ -1,132 +1,141 @@
 import axios from 'axios';
-import type { AuthResponse, PasswordEntry, User } from '../types';
-import { mockAuthResponse, mockPasswords } from './mockData';
+import type { AxiosError, AxiosInstance } from 'axios';
+import { config } from '../config';
+import { useAuthStore } from '../store/authStore';
+import { mockApi } from './mockData';
 
-const isDevelopment = import.meta.env.MODE === 'development';
-const MOCK_DELAY = 500; // Simulate network delay
+// Types
+export interface ApiError {
+  message: string;
+  status: number;
+}
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+export interface ApiResponse<T> {
+  data: T;
+  error: ApiError | null;
+  loading: boolean;
+}
+
+// Create axios instance
+const api: AxiosInstance = axios.create({
+  baseURL: `${config.api.baseUrl}/api/v1`,
+  timeout: config.api.timeout,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add auth token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add auth token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      useAuthStore.getState().logout();
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-const mockDelay = () => new Promise((resolve) => setTimeout(resolve, MOCK_DELAY));
-
+// API functions
 export const authApi = {
-  login: async (username: string, password: string): Promise<AuthResponse> => {
-    if (isDevelopment) {
-      await mockDelay();
-      if (username === 'testuser' && password === 'password') {
-        localStorage.setItem('token', mockAuthResponse.token);
-        return mockAuthResponse;
-      }
-      throw new Error('Invalid credentials');
+  login: async (username: string, password: string) => {
+    if (config.api.mockEnabled) {
+      return mockApi.auth.login(username, password);
     }
-    const response = await api.post('/auth/login', { username, password });
+
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+
+    const response = await api.post('/auth/login', formData);
     return response.data;
   },
 
-  register: async (username: string, email: string, password: string): Promise<AuthResponse> => {
-    if (isDevelopment) {
-      await mockDelay();
-      if (username && email && password) {
-        localStorage.setItem('token', mockAuthResponse.token);
-        return mockAuthResponse;
-      }
-      throw new Error('Invalid registration data');
+  register: async (username: string, email: string, password: string) => {
+    if (config.api.mockEnabled) {
+      return mockApi.auth.register(username, email, password);
     }
-    const response = await api.post('/auth/register', { username, email, password });
-    return response.data;
-  },
 
-  logout: () => {
-    localStorage.removeItem('token');
+    const response = await api.post('/auth/register', {
+      username,
+      email,
+      password,
+    });
+    return response.data;
   },
 };
 
 export const passwordsApi = {
-  getAll: async (): Promise<PasswordEntry[]> => {
-    if (isDevelopment) {
-      await mockDelay();
-      return mockPasswords;
+  getAll: async () => {
+    if (config.api.mockEnabled) {
+      return mockApi.passwords.getAll();
     }
+
     const response = await api.get('/passwords');
     return response.data;
   },
 
-  create: async (password: Omit<PasswordEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<PasswordEntry> => {
-    if (isDevelopment) {
-      await mockDelay();
-      const newPassword: PasswordEntry = {
-        ...password,
-        id: String(mockPasswords.length + 1),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      mockPasswords.push(newPassword);
-      return newPassword;
+  getById: async (id: string) => {
+    if (config.api.mockEnabled) {
+      return mockApi.passwords.getById(id);
     }
-    const response = await api.post('/passwords', password);
+
+    const response = await api.get(`/passwords/${id}`);
     return response.data;
   },
 
-  update: async (id: string, password: Partial<PasswordEntry>): Promise<PasswordEntry> => {
-    if (isDevelopment) {
-      await mockDelay();
-      const index = mockPasswords.findIndex((p) => p.id === id);
-      if (index === -1) throw new Error('Password not found');
-      mockPasswords[index] = {
-        ...mockPasswords[index],
-        ...password,
-        updatedAt: new Date().toISOString(),
-      };
-      return mockPasswords[index];
+  create: async (data: {
+    title: string;
+    username: string;
+    password: string;
+    url?: string;
+    notes?: string;
+    tags?: string[];
+  }) => {
+    if (config.api.mockEnabled) {
+      return mockApi.passwords.create(data);
     }
-    const response = await api.put(`/passwords/${id}`, password);
+
+    const response = await api.post('/passwords', data);
     return response.data;
   },
 
-  delete: async (id: string): Promise<void> => {
-    if (isDevelopment) {
-      await mockDelay();
-      const index = mockPasswords.findIndex((p) => p.id === id);
-      if (index === -1) throw new Error('Password not found');
-      mockPasswords.splice(index, 1);
-      return;
+  update: async (
+    id: string,
+    data: {
+      title?: string;
+      username?: string;
+      password?: string;
+      url?: string;
+      notes?: string;
+      tags?: string[];
     }
+  ) => {
+    if (config.api.mockEnabled) {
+      return mockApi.passwords.update(id, data);
+    }
+
+    const response = await api.put(`/passwords/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    if (config.api.mockEnabled) {
+      return mockApi.passwords.delete(id);
+    }
+
     await api.delete(`/passwords/${id}`);
   },
-};
-
-export const userApi = {
-  getProfile: async (): Promise<User> => {
-    if (isDevelopment) {
-      await mockDelay();
-      return mockAuthResponse.user;
-    }
-    const response = await api.get('/users/me');
-    return response.data;
-  },
-
-  updateProfile: async (data: Partial<User>): Promise<User> => {
-    if (isDevelopment) {
-      await mockDelay();
-      return { ...mockAuthResponse.user, ...data };
-    }
-    const response = await api.put('/users/me', data);
-    return response.data;
-  },
-};
-
-export default api; 
+}; 

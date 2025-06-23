@@ -9,28 +9,23 @@ import {
   Alert,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
-
-  const loginMutation = useMutation({
-    mutationFn: () => authApi.login(username, password),
-    onSuccess: (data) => {
-      setToken(data.token);
-      setUser(data.user);
-      navigate('/');
-    },
-  });
+  const { login, isLoading } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate();
+    try {
+      await login(username, password);
+      navigate('/');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An error occurred');
+    }
   };
 
   return (
@@ -50,9 +45,9 @@ export default function Login() {
           Sign in
         </Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          {loginMutation.isError && (
+          {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              Invalid username or password
+              {error}
             </Alert>
           )}
           <TextField
@@ -66,7 +61,7 @@ export default function Login() {
             autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            error={loginMutation.isError}
+            error={!!error}
           />
           <TextField
             margin="normal"
@@ -79,16 +74,16 @@ export default function Login() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={loginMutation.isError}
+            error={!!error}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={loginMutation.isPending}
+            disabled={isLoading}
           >
-            {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
           <Box sx={{ textAlign: 'center' }}>
             <Link component={RouterLink} to="/register" variant="body2">
