@@ -9,6 +9,8 @@ import {
   Typography,
   IconButton,
   InputAdornment,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -18,17 +20,32 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { passwordsApi } from '../services/api';
-import type { PasswordEntry } from '../types';
+import type { Password } from '../types';
+import PasswordDialog from '../components/PasswordDialog';
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPassword, setSelectedPassword] = useState<Password | undefined>();
+  const queryClient = useQueryClient();
 
-  const { data: passwords = [], isLoading, error } = useQuery({
+  const {
+    data: passwords = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['passwords'],
     queryFn: passwordsApi.getAll,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: passwordsApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['passwords'] });
+    },
   });
 
   const togglePasswordVisibility = (id: string) => {
@@ -38,18 +55,47 @@ export default function Dashboard() {
     }));
   };
 
-  const filteredPasswords = passwords.filter((password: PasswordEntry) =>
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this password?')) {
+      await deleteMutation.mutateAsync(id);
+    }
+  };
+
+  const handleAdd = () => {
+    setSelectedPassword(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (password: Password) => {
+    setSelectedPassword(password);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedPassword(undefined);
+  };
+
+  const filteredPasswords = passwords.filter((password: Password) =>
     password.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     password.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     password.url?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
-    return <Typography color="error">Error loading passwords</Typography>;
+    return (
+      <Alert severity="error" sx={{ mt: 2 }}>
+        Error loading passwords: {error instanceof Error ? error.message : 'Unknown error'}
+      </Alert>
+    );
   }
 
   return (
@@ -58,7 +104,7 @@ export default function Dashboard() {
         <Typography variant="h4" component="h1">
           Password Vault
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>
           Add Password
         </Button>
       </Box>
@@ -79,8 +125,14 @@ export default function Dashboard() {
         }}
       />
 
+      {deleteMutation.error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error deleting password: {deleteMutation.error instanceof Error ? deleteMutation.error.message : 'Unknown error'}
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
-        {filteredPasswords.map((password: PasswordEntry) => (
+        {filteredPasswords.map((password: Password) => (
           <Grid item xs={12} sm={6} md={4} key={password.id}>
             <Card>
               <CardContent>
@@ -117,11 +169,15 @@ export default function Dashboard() {
                   />
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                  <IconButton color="primary">
+                  <IconButton color="primary" onClick={() => handleEdit(password)}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton color="error">
-                    <DeleteIcon />
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDelete(password.id)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? <CircularProgress size={24} /> : <DeleteIcon />}
                   </IconButton>
                 </Box>
               </CardContent>
@@ -129,6 +185,12 @@ export default function Dashboard() {
           </Grid>
         ))}
       </Grid>
+
+      <PasswordDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        password={selectedPassword}
+      />
     </Box>
   );
 } 

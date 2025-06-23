@@ -11,7 +11,6 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  useTheme,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -22,7 +21,6 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { authApi } from '../services/api';
 
 const drawerWidth = 240;
 
@@ -32,18 +30,15 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const theme = useTheme();
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
+  const logout = useAuthStore((state) => state.logout);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleLogout = () => {
-    authApi.logout();
-    setToken(null);
-    setUser(null);
+    logout();
     navigate('/login');
   };
 
