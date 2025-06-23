@@ -2,26 +2,24 @@
 
 > A modern, secure password manager built with FastAPI, PostgreSQL, and React. Features AES-GCM encryption for credentials and Argon2-hashed master passwords.
 
-[![CI](https://github.com/medTrigui/passman-nextgen/actions/workflows/ci.yml/badge.svg)](https://github.com/medTrigui/passman-nextgen/actions/workflows/ci.yml)
-
 ## Overview
 
 PassMan NextGen is a full-stack password manager that prioritizes security and user experience. Built with modern technologies and containerized for easy deployment, it provides a secure way to store and manage passwords.
 
 ### Key Features
 
-- 🔐 **Secure Password Storage**
+- **Secure Password Storage**
   - AES-256-GCM encryption with per-entry IV
   - Argon2id master password hashing
   - JWT-based authentication
 
-- 🛠️ **Modern Tech Stack**
+- **Modern Tech Stack**
   - FastAPI backend with async support
   - React + TypeScript frontend
   - PostgreSQL database
   - Docker containerization
 
-- 🔄 **Developer Experience**
+- **Developer Experience**
   - OpenAPI documentation
   - Hot-reload development
   - Automated testing
