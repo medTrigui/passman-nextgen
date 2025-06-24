@@ -174,4 +174,58 @@ export const passwordsApi = {
 
     await api.delete(`/passwords/${id}`);
   },
+};
+
+export const userApi = {
+  getCurrentUser: async () => {
+    if (config.api.mockEnabled) {
+      return mockApi.users.getCurrentUser();
+    }
+
+    try {
+      const response = await api.get('/users/me');
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch user profile');
+    }
+  },
+
+  updateProfile: async (data: {
+    username?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }) => {
+    if (config.api.mockEnabled) {
+      return mockApi.users.updateProfile(data);
+    }
+
+    try {
+      const response = await api.put('/users/me', data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to update profile');
+    }
+  },
+
+  deleteAccount: async () => {
+    if (config.api.mockEnabled) {
+      return mockApi.users.deleteAccount();
+    }
+
+    try {
+      await api.delete('/users/me');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to delete account');
+    }
+  },
 }; 

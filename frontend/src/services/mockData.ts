@@ -143,4 +143,36 @@ export const mockApi = {
       await mockDelay();
     },
   },
+
+  users: {
+    getCurrentUser: async () => {
+      return {
+        username: "testuser",
+        email: "test@example.com"
+      };
+    },
+    updateProfile: async (data: {
+      username?: string;
+      email?: string;
+      currentPassword?: string;
+      newPassword?: string;
+    }) => {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Simulate validation
+      if (data.currentPassword === "wrong") {
+        throw new Error("Current password is incorrect");
+      }
+      
+      return {
+        username: data.username || "testuser",
+        email: data.email || "test@example.com"
+      };
+    },
+    deleteAccount: async () => {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
 }; 
