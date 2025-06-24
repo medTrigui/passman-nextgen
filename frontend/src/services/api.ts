@@ -8,6 +8,7 @@ import { mockApi } from './mockData';
 export interface ApiError {
   message: string;
   status: number;
+  details?: Record<string, string[]>;
 }
 
 export interface ApiResponse<T> {
@@ -44,6 +45,24 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
     }
+    
+    if (error.response?.status === 422) {
+      // Handle validation errors
+      const data = error.response.data as { detail?: Array<{ loc: string[], msg: string, type: string }> };
+      if (data.detail) {
+        const validationError = new Error('Validation Error');
+        (validationError as any).validationErrors = data.detail.reduce((acc, curr) => {
+          const field = curr.loc[curr.loc.length - 1];
+          if (!acc[field]) {
+            acc[field] = [];
+          }
+          acc[field].push(curr.msg);
+          return acc;
+        }, {} as Record<string, string[]>);
+        throw validationError;
+      }
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -55,12 +74,19 @@ export const authApi = {
       return mockApi.auth.login(username, password);
     }
 
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
+    try {
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
 
-    const response = await api.post('/auth/login', formData);
-    return response.data;
+      const response = await api.post('/auth/login', formData);
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Login failed. Please try again.');
+    }
   },
 
   register: async (username: string, email: string, password: string) => {
@@ -68,12 +94,22 @@ export const authApi = {
       return mockApi.auth.register(username, email, password);
     }
 
-    const response = await api.post('/auth/register', {
-      username,
-      email,
-      password,
-    });
-    return response.data;
+    try {
+      const response = await api.post('/auth/register', {
+        username,
+        email,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error && 'validationErrors' in error) {
+        throw error;
+      }
+      if (axios.isAxiosError(error) && error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Registration failed. Please try again.');
+    }
   },
 };
 

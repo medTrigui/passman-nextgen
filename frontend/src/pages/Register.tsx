@@ -11,30 +11,73 @@ import {
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
+interface ValidationErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
 export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { register, isLoading } = useAuthStore();
 
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {};
+
+    // Username validation
+    if (username.length < 3) {
+      errors.username = 'Username must be at least 3 characters long';
+    } else if (username.length > 50) {
+      errors.username = 'Username must be less than 50 characters';
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
+    }
+
+    // Confirm password validation
+    if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
+    if (!validateForm()) {
       return;
     }
     
-    setPasswordError('');
     try {
       await register(username, email, password);
       navigate('/');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosError = err as { response?: { data?: { detail?: string } } };
+        setError(axiosError.response?.data?.detail || 'Registration failed');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
@@ -71,7 +114,8 @@ export default function Register() {
             autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            error={!!error}
+            error={!!validationErrors.username}
+            helperText={validationErrors.username}
           />
           <TextField
             margin="normal"
@@ -83,7 +127,8 @@ export default function Register() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={!!error}
+            error={!!validationErrors.email}
+            helperText={validationErrors.email}
           />
           <TextField
             margin="normal"
@@ -96,7 +141,8 @@ export default function Register() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={!!error || !!passwordError}
+            error={!!validationErrors.password}
+            helperText={validationErrors.password}
           />
           <TextField
             margin="normal"
@@ -109,8 +155,8 @@ export default function Register() {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            error={!!error || !!passwordError}
-            helperText={passwordError}
+            error={!!validationErrors.confirmPassword}
+            helperText={validationErrors.confirmPassword}
           />
           <Button
             type="submit"
