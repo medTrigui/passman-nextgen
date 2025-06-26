@@ -75,11 +75,15 @@ export const authApi = {
     }
 
     try {
-      const formData = new FormData();
+      const formData = new URLSearchParams();
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await api.post('/auth/login', formData);
+      const response = await api.post('/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
       return response.data;
     } catch (error) {
       if (error instanceof Error) {

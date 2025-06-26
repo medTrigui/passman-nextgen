@@ -8,8 +8,8 @@ from . import Base
 class Password(Base):
     __tablename__ = "passwords"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
     title: Mapped[str] = mapped_column(String(255))
     username: Mapped[str] = mapped_column(String(255))
     encrypted_password: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

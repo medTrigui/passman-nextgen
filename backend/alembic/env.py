@@ -1,4 +1,6 @@
 import asyncio
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -7,8 +9,17 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from app.core.config import settings
-from app.models import Base
+# Add the backend directory to the Python path
+backend_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_dir))
+
+try:
+    from app.core.config import settings
+    from app.models import Base
+except ImportError as e:
+    print(f"Error importing app modules: {e}")
+    print("Make sure you're running this from the backend directory")
+    sys.exit(1)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,7 +34,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
-# Set the database URL in the alembic.ini file
+# Set the database URL from our configuration
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 def run_migrations_offline() -> None:
@@ -34,13 +45,20 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, 
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -62,5 +80,9 @@ async def run_async_migrations() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-
     asyncio.run(run_async_migrations())
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

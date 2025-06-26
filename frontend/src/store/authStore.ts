@@ -41,8 +41,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       await authApi.register(username, email, password);
-      // After registration, log in automatically
-      await useAuthStore.getState().login(username, password);
+      
+      // After successful registration, log in automatically
+      try {
+        await useAuthStore.getState().login(username, password);
+        set({ isLoading: false });
+      } catch (loginError) {
+        // If auto-login fails, still mark registration as successful
+        // but don't throw the login error
+        console.warn('Auto-login after registration failed:', loginError);
+        set({ 
+          isLoading: false,
+          error: 'Registration successful, but auto-login failed. Please login manually.' 
+        });
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Registration failed',

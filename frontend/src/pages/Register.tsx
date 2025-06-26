@@ -68,10 +68,20 @@ export default function Register() {
     
     try {
       await register(username, email, password);
+      // If registration and auto-login succeed, navigate to dashboard
       navigate('/');
     } catch (err) {
+      console.error('Registration error:', err);
+      
       if (err instanceof Error) {
         setError(err.message);
+        
+        // If registration succeeded but auto-login failed, redirect to login
+        if (err.message.includes('Registration successful, but auto-login failed')) {
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        }
       } else if (typeof err === 'object' && err !== null && 'response' in err) {
         const axiosError = err as { response?: { data?: { detail?: string } } };
         setError(axiosError.response?.data?.detail || 'Registration failed');
